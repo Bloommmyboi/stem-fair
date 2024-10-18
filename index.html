@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Polygon Quiz</title>
+    <style>
+        /* Import a modern and clean font */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #000000;  /* Black background */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: white;  /* White text for contrast */
+        }
+
+        .container {
+            background-color: #1e1e1e;  /* Dark gray container */
+            border-radius: 20px;
+            padding: 40px;
+            width: 100%;
+            max-width: 400px; 
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .timer {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 18px;
+            color: #ff6b6b;
+            font-weight: 600;
+        }
+
+        .scoreboard {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        #streak, #highestScore {
+            font-size: 16px;
+            color: #ffffff;  
+        }
+
+        #question {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #ffffff; 
+            font-weight: 500;
+        }
+
+        input {
+            width: 90%;
+            padding: 14px;
+            font-size: 16px;
+            border: 2px solid #dfe4ea;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            outline: none;
+            transition: border-color 0.3s ease;
+        }
+
+        input:focus {
+            border-color: #1e90ff;
+        }
+
+        button {
+            width: 95%;
+            padding: 14px;
+            background-color: #1e90ff;
+            color: white;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background-color: #155eab;
+        }
+
+        #feedback {
+            font-size: 18px;
+            margin-top: 15px;
+            color: #2ed573;
+            font-weight: 600;
+        }
+
+        #polygonDisplay {
+            margin-top: 30px;
+        }
+
+        #polygonDisplay canvas {
+            margin-top: 20px;
+        }
+
+        button.reset {
+            margin-top: 30px;
+            background-color: #ff4757;
+            border-radius: 8px;
+        }
+
+        button.reset:hover {
+            background-color: #e04045;
+        }
+
+        button.start-timer {
+            background-color: #1e90ff;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        /* Leaderboard Styles */
+        .leaderboard {
+            margin-top: 30px;
+            text-align: left;
+            font-size: 16px;
+        }
+
+        .leaderboard h2 {
+            margin-bottom: 10px;
+        }
+
+        .leaderboard ul {
+            list-style: none;
+            padding: 0;
+            color: #ffffff;
+        }
+
+        .leaderboard li {
+            margin: 5px 0;
+        }
+
+        .name-input {
+            margin-top: 20px;
+            display: none;
+        }
+
+        .name-input input {
+            width: 90%;
+            padding: 10px;
+            margin-top: 10px;
+        }
+
+        .name-input button {
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>quick tip use the formula (n-2)x180 devide 2</h1>
+    <p> use ur phone calculatorr :)) </p>
+    <div class="container">
+        <h1>Polygon Quiz</h1>
+        <div class="timer" id="timer">Time: 60s</div>
+        <div class="scoreboard">
+            <div id="streak">Streak: 0</div>
+            <div id="highestScore">Highest Score: 0</div>
+        </div>
+        <div id="question">Click 'Start Timer' to begin the quiz!</div>
+        <input type="number" id="answer" placeholder="Enter your answer" disabled/>
+        <button onclick="submitAnswer()" disabled>Submit Answer</button>
+        <div id="feedback"></div>
+        <div id="polygonDisplay"></div>
+        <button class="start-timer" onclick="startQuiz()">Start Timer</button>
+        <button class="reset" onclick="resetQuiz()">Reset Quiz</button>
+        
+        <!-- Leaderboard Section -->
+        <div class="leaderboard">
+            <h2>Leaderboard</h2>
+            <ul id="scoreList"></ul>
+        </div>
+        
+        <div class="name-input" id="nameInputDiv">
+            <input type="text" id="playerName" placeholder="Enter your name" />
+            <button onclick="submitScore()">Submit Score</button>
+        </div>
+    </div>
+
+    <script>
+        let timerInterval;
+        let timeLeft = 60;
+        let streak = 0;
+        let highestScore = 0;
+        let currentAnswer = 0;
+
+        const polygons = [
+            { name: 'Triangle', sides: 3, interiorAngle: 60, exteriorAngle: 120 },
+            { name: 'Square', sides: 4, interiorAngle: 90, exteriorAngle: 90 },
+            { name: 'Pentagon', sides: 5, interiorAngle: 108, exteriorAngle: 72 },
+            { name: 'Hexagon', sides: 6, interiorAngle: 120, exteriorAngle: 60 },
+            { name: 'Heptagon', sides: 7, interiorAngle: 128.57, exteriorAngle: 51.43 },
+            { name: 'Octagon', sides: 8, interiorAngle: 135, exteriorAngle: 45 }
+        ];
+
+        const correctSounds = [
+            new Audio('https://www.soundjay.com/button/sounds/button-3.mp3'),
+            new Audio('https://www.soundjay.com/button/sounds/button-5.mp3'),
+            new Audio('https://www.soundjay.com/button/sounds/button-9.mp3')
+        ];
+
+        const wrongSounds = [
+            new Audio('https://www.soundjay.com/button/sounds/button-2.mp3'),
+            new Audio('https://www.soundjay.com/button/sounds/button-4.mp3'),
+            new Audio('https://www.soundjay.com/button/sounds/button-6.mp3')
+        ];
+
+        function loadScores() {
+            const storedScores = JSON.parse(localStorage.getItem('leaderboard')) || [];
+            storedScores.sort((a, b) => b.score - a.score); // Sort scores from highest to lowest
+            const scoreList = document.getElementById('scoreList');
+            scoreList.innerHTML = ''; // Clear existing list
+
+            storedScores.forEach(entry => {
+                const scoreItem = document.createElement('li');
+                scoreItem.textContent = `${entry.name}: ${entry.score}`;
+                scoreList.appendChild(scoreItem);
+            });
+        }
+
+        function startTimer() {
+            timerInterval = setInterval(function () {
+                timeLeft--;
+                document.getElementById('timer').innerHTML = `Time: ${timeLeft}s`;
+
+                if (timeLeft <= 0) {
+                    clearInterval(timerInterval);
+                    document.getElementById('feedback').innerHTML = 'Time is up! Please enter your name to submit your score.';
+                    document.getElementById('answer').disabled = true;
+                    document.querySelector('button[onclick="submitAnswer()"]').disabled = true;
+                    document.getElementById('nameInputDiv').style.display = 'block';
+                }
+            }, 1000);
+        }
+
+        function askQuestion() {
+            const randomPolygon = polygons[Math.floor(Math.random() * polygons.length)];
+            const questionType = Math.random() < 0.5 ? 'interior' : 'sidesFromAngle';
+            
+            if (questionType === 'interior') {
+                currentAnswer = randomPolygon.interiorAngle;
+                document.getElementById('question').innerHTML = `What is the interior angle of a ${randomPolygon.name}?`;
+            } else {
+                currentAnswer = randomPolygon.sides;
+                const exampleAngle = randomPolygon.interiorAngle;
+                document.getElementById('question').innerHTML = `Given an interior angle of ${exampleAngle}, how many sides does the polygon have?`;
+            }
+            document.getElementById('polygonDisplay').innerHTML = '';
+        }
+
+        function submitAnswer() {
+            const userAnswer = parseFloat(document.getElementById('answer').value);
+            
+            if (userAnswer === currentAnswer) {
+                streak++;
+                if (streak > highestScore) {
+                    highestScore = streak;
+                    document.getElementById('highestScore').innerHTML = `Highest Score: ${highestScore}`;
+                }
+                document.getElementById('feedback').innerHTML = 'Correct!';
+                playRandomSound(correctSounds);
+                displayPolygon(currentAnswer);
+            } else {
+                streak = 0;
+                document.getElementById('feedback').innerHTML = 'Wrong answer, streak reset.';
+                playRandomSound(wrongSounds);
+            }
+
+            document.getElementById('streak').innerHTML = `Streak: ${streak}`;
+            askQuestion();
+        }
+
+        function playRandomSound(sounds) {
+            const randomIndex = Math.floor(Math.random() * sounds.length);
+            sounds[randomIndex].play();
+        }
+
+        function displayPolygon(sides) {
+            const matchedPolygon = polygons.find(p => p.sides === sides);
+
+            if (matchedPolygon) {
+                const polygonCanvas = document.createElement('canvas');
+                polygonCanvas.width = 300;
+                polygonCanvas.height = 300;
+
+                const ctx = polygonCanvas.getContext('2d');
+                const radius = 100;
+                const angleStep = (2 * Math.PI) / sides;
+
+                ctx.translate(150, 150);
+                ctx.beginPath();
+
+                for (let i = 0; i < sides; i++) {
+                    const x = radius * Math.cos(i * angleStep);
+                    const y = radius * Math.sin(i * angleStep);
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                }
+
+                ctx.closePath();
+                ctx.strokeStyle = '#ffffff';  // White stroke to contrast with black background
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                document.getElementById('polygonDisplay').innerHTML = ''; // Clear previous canvas
+                document.getElementById('polygonDisplay').appendChild(polygonCanvas);
+            }
+        }
+
+        function resetQuiz() {
+            clearInterval(timerInterval);
+            timeLeft = 60;
+            streak = 0;
+            document.getElementById('timer').innerHTML = 'Time: 60s';
+            document.getElementById('streak').innerHTML = 'Streak: 0';
+            document.getElementById('feedback').innerHTML = '';
+            document.getElementById('polygonDisplay').innerHTML = '';
+            document.getElementById('answer').value = '';
+            document.getElementById('answer').disabled = true;
+            document.querySelector('button[onclick="submitAnswer()"]').disabled = true;
+            document.getElementById('nameInputDiv').style.display = 'none'; // Hide name input
+        }
+
+        function startQuiz() {
+            startTimer();
+            askQuestion();
+            document.getElementById('answer').disabled = false;
+            document.querySelector('button[onclick="submitAnswer()"]').disabled = false;
+            document.getElementById('nameInputDiv').style.display = 'none'; // Ensure name input is hidden
+        }
+
+        function submitScore() {
+            const playerName = document.getElementById('playerName').value;
+            if (playerName) {
+                const storedScores = JSON.parse(localStorage.getItem('leaderboard')) || [];
+                storedScores.push({ name: playerName, score: highestScore });
+                localStorage.setItem('leaderboard', JSON.stringify(storedScores));
+                loadScores(); // Reload scores to display
+                document.getElementById('playerName').value = ''; // Clear the input
+                document.getElementById('nameInputDiv').style.display = 'none'; // Hide name input after submission
+            }
+        }
+
+        // Call loadScores on window load to display existing scores
+        window.onload = function () {
+            loadScores(); // Load and display leaderboard
+            resetQuiz(); // Reset quiz to default state
+        };
+    </script>
+</body>
+</html>
